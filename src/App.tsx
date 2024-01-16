@@ -78,11 +78,6 @@ export default function App() {
   // create a state variable for our connection
   const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
 
-  console.log("connection:", connection);
-
-  // connection to use with local solana test validator
-  // const connection = new Connection("http://127.0.0.1:8899", "confirmed");
-
   // this is the function that runs whenever the component updates (e.g. render, refresh)
   useEffect(() => {
     const provider = getProvider();
@@ -97,12 +92,26 @@ export default function App() {
    * This function is called when the Create a New Solana Account button is clicked
    */
   const createSender = async () => {
-    // create a new Keypair
+    ///////////////////////////
+    // create a new Keypair //
+    //////////////////////////
 
-    const newPair = new Keypair();
+    // const newPair = new Keypair();
+
+    /////////////////////////////
+    // Use a Previous Keypair //
+    ////////////////////////////
+
+    const PRIVATE = new Uint8Array([
+      22, 85, 155, 218, 55, 196, 141, 96, 133, 17, 250, 56, 204, 233, 161, 46,
+      175, 108, 109, 32, 72, 33, 190, 21, 107, 10, 205, 113, 42, 73, 23, 182,
+      214, 25, 229, 129, 33, 167, 251, 236, 91, 164, 31, 68, 233, 68, 7, 133,
+      74, 30, 89, 32, 162, 18, 138, 177, 114, 234, 133, 237, 205, 119, 35, 212,
+    ]);
+
+    const newPair = Keypair.fromSecretKey(PRIVATE);
+
     const privateKey = newPair.secretKey;
-
-    console.log("idk:", privateKey);
 
     console.log("Sender account: ", newPair!.publicKey.toString());
     console.log("Airdropping 2 SOL to Sender Wallet");
@@ -110,22 +119,26 @@ export default function App() {
     // save this new KeyPair into this state variable
     setSenderKeypair(newPair);
 
-    // request airdrop into this new account
+    ////////////////////////////////////////////
+    // request airdrop into this new account //
+    ////////////////////////////////////////////
 
-    try {
-      const airDrop = await connection.requestAirdrop(
-        new PublicKey(newPair!.publicKey),
-        2 * LAMPORTS_PER_SOL
-      );
+    // try {
+    //   const airDrop = await connection.requestAirdrop(
+    //     new PublicKey(newPair!.publicKey),
+    //     2 * LAMPORTS_PER_SOL
+    //   );
 
-      await connection.confirmTransaction(airDrop);
-    } catch (error) {
-      console.log(error);
-    }
+    //   await connection.confirmTransaction(airDrop);
+    // } catch (error) {
+    //   console.log(error);
+    // }
 
-    const latestBlockHash = await connection.getLatestBlockhash();
+    // const latestBlockHash = await connection.getLatestBlockhash();
 
-    // now confirm the transaction
+    //////////////////////////////////
+    // now confirm the transaction //
+    /////////////////////////////////
 
     console.log(
       "Wallet Balance: " +
@@ -187,6 +200,25 @@ export default function App() {
     // create a new transaction for the transfer
 
     // send and confirm the transaction
+
+    const recPubKey = receiverPublicKey;
+    const fromKey = senderKeypair.publicKey;
+
+    var transaction = new Transaction().add(
+      SystemProgram.transfer({
+        fromPubkey: fromKey,
+        toPubkey: recPubKey,
+        lamports: 1 * LAMPORTS_PER_SOL,
+      })
+    );
+
+    console.log("sender Keypair", senderKeypair);
+
+    var signature = await sendAndConfirmTransaction(connection, transaction, [
+      senderKeypair,
+    ]);
+
+    console.log("signature is ", signature);
 
     console.log("transaction sent and confirmed");
     console.log(
